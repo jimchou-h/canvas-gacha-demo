@@ -34,3 +34,5 @@ capability: gacha-reveal-flow, canvas-gacha-interface
 - 2026-10-20 渲染：星轨按进度绘制头尾与光晕，含 5★ 时切换金色、更长尾迹与更多射线；`reveal` 期间未揭晓槽位显示虚线占位，最新一张按 `revealElapsed` 淡入，保证总览与逐张使用同一网格坐标。
 - 2026-10-20 输入：`requestDraw` 在 `flight`/`reveal` 直接返回原状态，`Math.random` 只在真正开抽时被调用，因此重复点击连随机数都不消耗；跳过入口为语义化 HTML 按钮，动画期间才可见。
 - 2026-10-20 关票：AC 全过（纯逻辑 + 构建 + dev server 冒烟），本地 commit，**不推送 → `pending_push`**。
+- 2026-10-20 阶段 4 反馈「星光划过的时候感觉有点卡」：定位到 `flight` 帧只画背景层 + 星轨，而 `drawBackdrop` 每帧重建 3 个渐变、2 次大面积径向填充和 140 次逐星 `globalAlpha` 填充；`drawStarTrail` 每帧再新建一个径向渐变并切换 30 次 alpha。已按 commit `1eabcc4` 改为「静态图层按 尺寸×dpr 缓存 + alpha 分档合批 + 光晕精灵缓存」。
+- 2026-10-20 可测性：新增 `src/render/perf.ts`，仅当 URL 带 `?stats` 时挂只读面板，显示 fps、帧间隔 mean/p95/max、`jank(>25ms)` 计数与 backdrop/trail/cards 分段耗时。待用户用 `http://localhost:5178/?stats` 复测后决定是否继续处理 `drawCard` 的两处 `shadowBlur`（该项只影响 `reveal`/`result`，不在飞行路径上）。
