@@ -32,3 +32,4 @@ capability: canvas-gacha-interface, mock-gacha-draw
 - 2026-10-20 红灯先行：先提交 4 个测试文件（模块缺失，3 files failed）→ 实现 `src/core/{rarity,characters,layout}.ts`、`src/render/{assets,starfield,card,scene}.ts`、`src/main.ts` 后 17 tests passed，`tsc --noEmit` 与 `vite build` 均通过。
 - 2026-10-20 素材：ImageGen 生成 9 张原创角色插画（5★×2、4★×3、3★×4），原图 25MB 保留在本地 `assets-src/`（已 gitignore），经 `scripts/optimize-assets.mjs`（sharp）压至 640×960 JPEG，合计 800KB。
 - 2026-10-20 关票：AC 全过（纯逻辑 + 构建），commit 已落本地仓库；按用户选择 **不推送远端 → `pending_push`**。人工浏览器项转交阶段 4 验收清单。
+- 2026-10-20 阶段 4 人工验收发现缺陷：桌面十连总览的大卡上「三星 · 常态」标签行压到卡框下沿（名称行同样贴近）。根因是信息栏三行用固定比例偏移排布，而字号设有可读性下限，卡片越大下限越不起作用、比例偏移却会超出信息栏高度。修复：抽出 `plateLayout(box)` 纯函数，先量「星点行 + 名称 + 标签」总高度再在信息栏内垂直居中；总高度放不下时先去掉标签行，仍放不下则压缩名称字号。回归由 `test/card-plate.test.ts` 锁住（40–360px 及 4 种视口的总览卡面：不出框、不重叠、星点行不超宽）。commit `93bda28`。
