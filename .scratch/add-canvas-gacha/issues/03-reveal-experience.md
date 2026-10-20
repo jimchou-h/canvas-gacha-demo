@@ -36,3 +36,4 @@ capability: gacha-reveal-flow, canvas-gacha-interface
 - 2026-10-20 关票：AC 全过（纯逻辑 + 构建 + dev server 冒烟），本地 commit，**不推送 → `pending_push`**。
 - 2026-10-20 阶段 4 反馈「星光划过的时候感觉有点卡」：定位到 `flight` 帧只画背景层 + 星轨，而 `drawBackdrop` 每帧重建 3 个渐变、2 次大面积径向填充和 140 次逐星 `globalAlpha` 填充；`drawStarTrail` 每帧再新建一个径向渐变并切换 30 次 alpha。已按 commit `1eabcc4` 改为「静态图层按 尺寸×dpr 缓存 + alpha 分档合批 + 光晕精灵缓存」。
 - 2026-10-20 可测性：新增 `src/render/perf.ts`，仅当 URL 带 `?stats` 时挂只读面板，显示 fps、帧间隔 mean/p95/max、`jank(>25ms)` 计数与 backdrop/trail/cards 分段耗时。待用户用 `http://localhost:5178/?stats` 复测后决定是否继续处理 `drawCard` 的两处 `shadowBlur`（该项只影响 `reveal`/`result`，不在飞行路径上）。
+- 2026-10-21 验收复测：面板显示绘制仅 0.6–0.9ms，但该浏览器帧回调只有 1–2 次/秒，不能当作普通浏览器的性能结论。真正缺陷是 `main.ts` 把每帧推进量截断到 120ms，慢帧下 2 秒星轨被拉长、单抽 3 秒仍停在星轨。已改为 `frameDelta` 取 rAF 时间戳差值（不截断；慢帧或后台返回由 reducer 一次快进至终态），面板首行同时显示播放时钟，锁在 `test/reveal-flow.test.ts` 的 4 条新用例，commit `697c074`。

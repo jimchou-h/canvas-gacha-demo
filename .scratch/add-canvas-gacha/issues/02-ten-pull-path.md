@@ -21,7 +21,7 @@ capability: mock-gacha-draw, canvas-gacha-interface
 ## 测试点（Vitest）
 
 - `test/ten-pull.test.ts`：全 3★ 注入序列 → 第 10 张为 4★ 且改取 4★ 角色；已有 4★ / 已有 5★ → 与基础十次结果逐张相同；连续三次十连独立；60 轮 LCG 随机流下张数恒为 10 且至少一张 4★+；重复角色允许。
-- `test/summary-grid.test.ts`：320×600、390×720、1440×900 三种视口下十张卡面全在画面内且两两不重叠；小屏卡面宽度 ≥60px；保持 1:1.4 竖版比例。
+- `test/summary-grid.test.ts`：320×600、390×720、1440×900 三种视口下十张卡面全在画面内且两两不重叠；小屏卡面宽度 ≥60px，390×590 竖屏 ≥88px 且每行居中；保持与插画一致的 2:3 竖版比例。
 
 ## 人工浏览器验收（并入阶段 4 清单）
 
@@ -32,3 +32,4 @@ capability: mock-gacha-draw, canvas-gacha-interface
 - 2026-10-20 红灯先行：`test/ten-pull.test.ts` + `test/summary-grid.test.ts` 共 10 个失败用例（`drawTen` / `summaryBoxes` 未实现）→ 实现后 27 tests passed，`tsc --noEmit` 与 `vite build` 通过。
 - 2026-10-20 规则落点：保底只在当前十连内生效（`src/core/characters.ts` 的 `drawTen`），不引入跨次计数；总览小卡走 compact 排版（星点 + 短名），保证 60px 宽度下名称与星级仍可读。
 - 2026-10-20 关票：AC 全过（纯逻辑 + 构建），本地 commit，**不推送 → `pending_push`**。
+- 2026-10-21 阶段 4 反馈「手机端 390px 视口下卡面和名称很小」：根因是 `summaryBoxes` 把列数写死成 `min(5, count)`，竖屏高度余量根本用不上，卡面被压到 67.1px。改为在 1–5 列里选**能容纳最大卡面**的列数，并让每行在本行居中（末行不满不留空洞）。390×590 舞台 → 3 列 4 行、90.5px（+35%）；360×560 → 86.1px；1440×900 桌面仍 5 列 262.8px 不变。回归锁在 `test/summary-grid.test.ts` 新增的宽度下限与行居中用例，commit `d0cd509`。
