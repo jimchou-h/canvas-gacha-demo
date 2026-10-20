@@ -1,8 +1,8 @@
 import { type CharacterDef, CHARACTER_POOL, drawSingle, drawTen } from './core/characters';
 import { computeCanvasSize, type LogicalSize, toLogicalPoint } from './core/layout';
-import { advance, initialRevealState, requestDraw, skip } from './core/reveal-flow';
+import { advance, FLIGHT_DURATION, frameDelta, initialRevealState, requestDraw, skip, type RevealState } from './core/reveal-flow';
 import { preloadCharacters } from './render/assets';
-import { initStats, sampleFrame } from './render/perf';
+import { initStats, sampleFrame, setNote } from './render/perf';
 import { isInside, renderScene, tapHintBox } from './render/scene';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -22,6 +22,12 @@ let lastTime = 0;
 
 function isBusy(): boolean {
   return state.phase === 'flight' || state.phase === 'reveal';
+}
+
+function clockNote(shot: RevealState): string {
+  if (shot.phase === 'flight') return `flight ${Math.round(shot.flightElapsed)}/${FLIGHT_DURATION}ms`;
+  if (shot.phase === 'reveal') return `reveal +${Math.round(shot.revealElapsed)}ms 已揭 ${shot.revealed}/${shot.cards.length}`;
+  return shot.phase;
 }
 
 function announce(cards: readonly CharacterDef[]): void {
@@ -50,14 +56,15 @@ function startDraw(draw: () => readonly CharacterDef[]): void {
 }
 
 function frame(timeMs: number): void {
-  const interval = lastTime === 0 ? 16.7 : timeMs - lastTime;
-  const delta = lastTime === 0 ? 0 : Math.min(interval, 120);
+  const interval = lastTime === 0 ? 1000 / 60 : timeMs - lastTime;
+  const delta = frameDelta(lastTime, timeMs);
   lastTime = timeMs;
   const started = performance.now();
   const before = state.phase;
   state = advance(state, delta);
   if (before !== state.phase && !isBusy()) announce(state.cards);
   skipButton.hidden = !isBusy();
+  setNote(clockNote(state));
   const timings = renderScene(ctx, logical, state, timeMs, dpr);
   const render = performance.now() - started;
   sampleFrame({ interval, render, ...timings });

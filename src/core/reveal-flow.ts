@@ -66,3 +66,13 @@ export function skip(state: RevealState): RevealState {
   if (state.phase === 'flight' || state.phase === 'reveal') return finish(state);
   return state;
 }
+
+/**
+ * 帧推进量取 rAF 时间戳之差，不做上限截断：
+ * 慢帧或后台返回时应一次快进到真实进度，否则「约 2 秒星轨」会被拉成十几秒。
+ * 首帧（prevTimeMs 为 0）没有基准时间戳，不推进。
+ */
+export function frameDelta(prevTimeMs: number, timeMs: number): number {
+  if (prevTimeMs === 0) return 0;
+  return Math.max(0, timeMs - prevTimeMs);
+}

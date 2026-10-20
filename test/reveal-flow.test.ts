@@ -4,6 +4,7 @@ import {
   FLIGHT_DURATION,
   REVEAL_INTERVAL,
   advance,
+  frameDelta,
   initialRevealState,
   requestDraw,
   skip,
@@ -113,5 +114,31 @@ describe('抽卡流程状态机', () => {
     expect(advance(idleState, 5000)).toBe(idleState);
     const summary = skip(requestDraw(idleState, () => TEN));
     expect(advance(summary, 5000)).toBe(summary);
+  });
+});
+
+describe('帧推进量按真实经过时间', () => {
+  it('首帧不推进，后续帧取 rAF 时间戳之差', () => {
+    expect(frameDelta(0, 1234)).toBe(0);
+    expect(frameDelta(1000, 1016.7)).toBeCloseTo(16.7, 5);
+  });
+
+  it('慢帧不被截断：3 秒的帧间隔就推进 3 秒', () => {
+    expect(frameDelta(1000, 4000)).toBe(3000);
+    expect(frameDelta(1000, 61_000)).toBe(60_000);
+  });
+
+  it('时间戳回退时不产生负推进', () => {
+    expect(frameDelta(5000, 4000)).toBe(0);
+  });
+
+  it('掉帧后一次快进与逐帧推进落在同一终点', () => {
+    const flight = requestDraw(idleState, () => TEN);
+    const jumped = advance(flight, 6000);
+    let stepped = flight;
+    for (let elapsed = 0; elapsed < 6000; elapsed += 16.7) stepped = advance(stepped, 16.7);
+    expect(jumped.phase).toBe('summary');
+    expect(jumped.phase).toBe(stepped.phase);
+    expect(jumped.revealed).toBe(stepped.revealed);
   });
 });
