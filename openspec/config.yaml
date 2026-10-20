@@ -1,0 +1,4 @@
+schema: spec-driven
+context: |
+  本项目的新建 OpenSpec 制品正文使用中文；结构标题及 SHALL、MUST、WHEN、THEN 等规范关键词保留英文。
+  进行中的需求、设计和任务只维护在 openspec/changes/<change-name>/。
