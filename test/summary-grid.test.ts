@@ -35,6 +35,29 @@ describe('summaryBoxes 十连总览网格', () => {
     for (const box of boxes) expect(box.width).toBeGreaterThanOrEqual(60);
   });
 
+  it('窄屏不挤成五列：390 宽的十连卡面明显大于五列布局', () => {
+    // 390×590 是手机竖屏去掉标题栏与按钮条后的舞台尺寸。
+    const boxes = summaryBoxes({ width: 390, height: 590 }, 10);
+    const widths = boxes.map((box) => box.width);
+    for (const width of widths) expect(width).toBeGreaterThanOrEqual(88);
+    expect(Math.min(...widths)).toBeGreaterThan(390 / 5 - 20);
+  });
+
+  it('最后一行不满时也在本行居中，不留空洞', () => {
+    const logical = { width: 390, height: 590 };
+    const boxes = summaryBoxes(logical, 10);
+    const rows = new Map<number, readonly (typeof boxes)[number][]>();
+    for (const box of boxes) {
+      const key = Math.round(box.y);
+      rows.set(key, [...(rows.get(key) ?? []), box]);
+    }
+    for (const row of rows.values()) {
+      const left = Math.min(...row.map((box) => box.x));
+      const right = Math.max(...row.map((box) => box.x + box.width));
+      expect(left + right, '行居中').toBeCloseTo(logical.width, 1);
+    }
+  });
+
   it('保持卡面竖版比例', () => {
     const [first] = summaryBoxes({ width: 800, height: 600 }, 10);
     expect(first).toBeDefined();

@@ -39,27 +39,44 @@ export function singleCardBox(logical: LogicalSize): Box {
   };
 }
 
+const MAX_COLUMNS = 5;
+
 export function summaryBoxes(logical: LogicalSize, count: number): readonly Box[] {
-  const columns = Math.min(5, count);
-  const rows = Math.ceil(count / columns);
   const edge = Math.min(logical.width, logical.height);
   const margin = edge * 0.03;
   const gap = edge * 0.02;
-  const cellWidth = (logical.width - margin * 2 - gap * (columns - 1)) / columns;
-  const cellHeight = (logical.height - margin * 2 - gap * (rows - 1)) / rows;
-  const width = Math.min(cellWidth, cellHeight / CARD_ASPECT);
+
+  const cardWidth = (columns: number) => {
+    const rows = Math.ceil(count / columns);
+    const cellWidth = (logical.width - margin * 2 - gap * (columns - 1)) / columns;
+    const cellHeight = (logical.height - margin * 2 - gap * (rows - 1)) / rows;
+    return Math.min(cellWidth, cellHeight / CARD_ASPECT);
+  };
+
+  // 列数不写死：手机竖屏上五列会把卡面压到 67px，这里取能容纳最大卡面的列数。
+  let columns = 1;
+  let width = 0;
+  for (let candidate = 1; candidate <= Math.min(MAX_COLUMNS, count); candidate++) {
+    const fitted = cardWidth(candidate);
+    if (fitted > width) {
+      width = fitted;
+      columns = candidate;
+    }
+  }
+
   const height = width * CARD_ASPECT;
-  const totalWidth = columns * width + gap * (columns - 1);
-  const totalHeight = rows * height + gap * (rows - 1);
-  const startX = (logical.width - totalWidth) / 2;
-  const startY = (logical.height - totalHeight) / 2;
+  const rows = Math.ceil(count / columns);
+  const startY = (logical.height - (rows * height + (rows - 1) * gap)) / 2;
 
   const boxes: Box[] = [];
   for (let i = 0; i < count; i++) {
-    const column = i % columns;
     const row = Math.floor(i / columns);
+    const column = i % columns;
+    // 每行在本行内居中，末行不满时也不会右侧留空。
+    const rowSize = Math.min(columns, count - row * columns);
+    const rowWidth = rowSize * width + (rowSize - 1) * gap;
     boxes.push({
-      x: startX + column * (width + gap),
+      x: (logical.width - rowWidth) / 2 + column * (width + gap),
       y: startY + row * (height + gap),
       width,
       height,
