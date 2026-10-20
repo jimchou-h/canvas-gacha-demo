@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest';
+import { CHARACTER_POOL, drawSingle, listCharacters } from '../src/core/characters';
+import type { RandomSource } from '../src/core/rarity';
+
+const cycle = (values: readonly number[]): RandomSource => {
+  let i = 0;
+  return () => {
+    const value = values[i % values.length];
+    i += 1;
+    if (value === undefined) throw new Error('随机序列为空');
+    return value;
+  };
+};
+
+describe('mock 角色池', () => {
+  it('每个稀有度都有可用角色，字段完整', () => {
+    for (const rarity of [3, 4, 5] as const) {
+      const pool = CHARACTER_POOL[rarity];
+      expect(pool.length).toBeGreaterThan(0);
+      for (const c of pool) {
+        expect(c.name.length).toBeGreaterThan(0);
+        expect(c.rarity).toBe(rarity);
+        expect(c.art.endsWith('.jpg')).toBe(true);
+      }
+    }
+  });
+
+  it('池规模满足 5★×2、4★×3、3★×4', () => {
+    expect(listCharacters(5)).toHaveLength(2);
+    expect(listCharacters(4)).toHaveLength(3);
+    expect(listCharacters(3)).toHaveLength(4);
+  });
+});
+
+describe('drawSingle', () => {
+  it('按注入随机源先定稀有度，再取该池角色', () => {
+    const rand = cycle([0.005, 0.5, 0.05]);
+    const first = drawSingle(rand);
+    expect(first.rarity).toBe(5);
+    expect(CHARACTER_POOL[5].some((c) => c.id === first.id)).toBe(true);
+    expect(drawSingle(() => 0.5).rarity).toBe(3);
+    expect(drawSingle(() => 0.05).rarity).toBe(4);
+  });
+
+  it('重复抽取不要求账号或货币，允许重复角色', () => {
+    const rand: RandomSource = () => 0.5;
+    expect(drawSingle(rand).id).toBe(drawSingle(rand).id);
+    expect(drawSingle(rand).rarity).toBe(3);
+  });
+});

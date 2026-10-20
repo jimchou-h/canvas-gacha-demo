@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#070a1e" />
+    <title>星穹幻想抽卡演示</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <h1>星穹幻想 · 抽卡演示</h1>
+        <p class="app-hint">本地 mock 抽取，5★ 1.5%、4★ 12%、3★ 86.5%</p>
+      </header>
+
+      <div class="stage-wrap">
+        <canvas id="stage" aria-label="抽卡画面"></canvas>
+      </div>
+
+      <footer class="action-bar">
+        <button id="btn-single" class="action" type="button">单抽</button>
+      </footer>
+
+      <p id="result-live" class="sr-only" role="status" aria-live="polite"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
