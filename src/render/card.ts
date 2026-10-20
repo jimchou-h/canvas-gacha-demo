@@ -101,6 +101,56 @@ export function drawSlot(ctx: CanvasRenderingContext2D, box: Box): void {
   ctx.restore();
 }
 
+export interface PlateLayout {
+  readonly compact: boolean;
+  readonly plateTop: number;
+  readonly plateHeight: number;
+  readonly pipRadius: number;
+  readonly pipGap: number;
+  readonly pipY: number;
+  readonly nameSize: number;
+  readonly nameY: number;
+  readonly labelSize: number;
+  readonly labelY: number;
+}
+
+export function plateLayout(box: Box): PlateLayout {
+  const plateHeight = box.height * 0.22;
+  const plateTop = box.y + box.height - plateHeight;
+  const compact = box.width < 96;
+  const gap = plateHeight * 0.06;
+  const pipRadius = compact
+    ? Math.max(2.5, Math.min(box.width * 0.05, plateHeight * 0.15, box.width * 0.074))
+    : Math.max(4, Math.min(box.width * 0.032, plateHeight * 0.13, box.width * 0.074));
+  const nameFor = (width: number) =>
+    compact
+      ? Math.max(9, Math.min(width * 0.13, plateHeight * 0.4))
+      : Math.max(11, Math.min(width * 0.072, plateHeight * 0.24));
+  const blockHeight = (nameSize: number, labelSize: number) =>
+    pipRadius * 2 + nameSize + gap + (labelSize > 0 ? gap + labelSize : 0);
+
+  let nameSize = nameFor(box.width);
+  let labelSize = compact ? 0 : Math.max(9, Math.min(box.width * 0.052, plateHeight * 0.17));
+  if (blockHeight(nameSize, labelSize) + 4 > plateHeight) labelSize = 0;
+  if (blockHeight(nameSize, 0) + 4 > plateHeight) nameSize = plateHeight - pipRadius * 2 - gap - 4;
+
+  const height = blockHeight(nameSize, labelSize);
+  const top = plateTop + Math.max(2, (plateHeight - height) / 2);
+
+  return {
+    compact,
+    plateTop,
+    plateHeight,
+    pipRadius,
+    pipGap: pipRadius * 2.6,
+    nameSize,
+    labelSize,
+    pipY: top + pipRadius,
+    nameY: top + pipRadius * 2 + gap + nameSize / 2,
+    labelY: top + pipRadius * 2 + gap * 2 + nameSize + labelSize / 2,
+  };
+}
+
 export function drawCard(
   ctx: CanvasRenderingContext2D,
   card: CharacterDef,
@@ -109,8 +159,8 @@ export function drawCard(
 ): void {
   const theme = THEME[card.rarity];
   const alpha = options.alpha ?? 1;
-  const plateHeight = box.height * 0.22;
-  const artBox: Box = { ...box, height: box.height - plateHeight };
+  const layout = plateLayout(box);
+  const artBox: Box = { ...box, height: box.height - layout.plateHeight };
   const radius = box.width * 0.06;
 
   ctx.save();
@@ -158,36 +208,30 @@ export function drawCard(
 
   ctx.save();
   ctx.fillStyle = 'rgba(8, 11, 30, 0.92)';
-  ctx.fillRect(artBox.x, artBox.y + artBox.height, box.width, plateHeight);
+  ctx.fillRect(artBox.x, layout.plateTop, box.width, layout.plateHeight);
   ctx.restore();
 
-  const compact = box.width < 96;
-  const pipRadius = Math.max(3.5, box.width * (compact ? 0.05 : 0.032));
-  const pipGap = pipRadius * 2.6;
-  const pipRowWidth = (card.rarity - 1) * pipGap;
-  const pipCenterX = box.x + box.width / 2;
-  const pipY = artBox.y + artBox.height + plateHeight * (compact ? 0.3 : 0.28);
+  const pipRowWidth = (card.rarity - 1) * layout.pipGap;
+  const centerX = box.x + box.width / 2;
   ctx.save();
   ctx.shadowColor = theme.glow;
   ctx.shadowBlur = card.rarity === 5 ? 12 : 6;
   for (let i = 0; i < card.rarity; i++) {
-    drawPip(ctx, pipCenterX - pipRowWidth / 2 + i * pipGap, pipY, pipRadius, theme.frame);
+    drawPip(ctx, centerX - pipRowWidth / 2 + i * layout.pipGap, layout.pipY, layout.pipRadius, theme.frame);
   }
   ctx.restore();
 
-  const nameSize = compact ? Math.max(9, box.width * 0.13) : Math.max(12, box.width * 0.072);
-  const displayName = compact ? card.name.split('·').pop() ?? card.name : card.name;
+  const displayName = layout.compact ? card.name.split('·').pop() ?? card.name : card.name;
   ctx.fillStyle = '#eef1ff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `600 ${nameSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
-  ctx.fillText(displayName, pipCenterX, pipY + plateHeight * 0.45, box.width * 0.92);
+  ctx.font = `600 ${layout.nameSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
+  ctx.fillText(displayName, centerX, layout.nameY, box.width * 0.92);
 
-  if (!compact) {
-    const labelSize = Math.max(10, box.width * 0.052);
-    ctx.font = `${labelSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
+  if (layout.labelSize > 0) {
+    ctx.font = `${layout.labelSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
     ctx.fillStyle = theme.frame;
-    ctx.fillText(theme.label, pipCenterX, pipY + plateHeight * 0.42 + nameSize * 1.35, box.width * 0.9);
+    ctx.fillText(theme.label, centerX, layout.labelY, box.width * 0.92);
   }
 
   roundedPath(ctx, box, radius);
