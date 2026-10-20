@@ -1,11 +1,9 @@
 import type { CharacterDef } from '../core/characters';
+import { FLIGHT_DURATION, REVEAL_INTERVAL, type RevealState } from '../core/reveal-flow';
 import type { LogicalSize, Point } from '../core/layout';
-import { type Box, drawCard, singleCardBox, summaryBoxes } from './card';
+import { type Box, drawCard, drawSlot, singleCardBox, summaryBoxes } from './card';
+import { drawStarTrail } from './starTrail';
 import { drawBackdrop } from './starfield';
-
-export interface DisplayState {
-  readonly cards: readonly CharacterDef[];
-}
 
 export function tapHintBox(logical: LogicalSize): Box {
   const width = Math.min(240, logical.width * 0.7);
@@ -27,8 +25,7 @@ function drawTapHint(ctx: CanvasRenderingContext2D, logical: LogicalSize, timeMs
   const pulse = 0.55 + 0.25 * Math.sin(timeMs / 450);
   ctx.save();
   ctx.globalAlpha = pulse;
-  ctx.beginPath();
-  ctx.roundRect(box.x, box.y, box.width, box.height, box.height / 2);
+  roundedPill(ctx, box);
   ctx.fillStyle = 'rgba(24, 32, 78, 0.8)';
   ctx.fill();
   ctx.lineWidth = 1.2;
@@ -43,23 +40,52 @@ function drawTapHint(ctx: CanvasRenderingContext2D, logical: LogicalSize, timeMs
   ctx.restore();
 }
 
+function roundedPill(ctx: CanvasRenderingContext2D, box: Box): void {
+  const r = box.height / 2;
+  ctx.beginPath();
+  ctx.moveTo(box.x + r, box.y);
+  ctx.arcTo(box.x + box.width, box.y, box.x + box.width, box.y + box.height, r);
+  ctx.arcTo(box.x + box.width, box.y + box.height, box.x, box.y + box.height, r);
+  ctx.arcTo(box.x, box.y + box.height, box.x, box.y, r);
+  ctx.arcTo(box.x, box.y, box.x + box.width, box.y, r);
+  ctx.closePath();
+}
+
+function drawRevealGrid(ctx: CanvasRenderingContext2D, logical: LogicalSize, state: RevealState): void {
+  const boxes = summaryBoxes(logical, state.cards.length);
+  const freshness = Math.min(1, state.revealElapsed / REVEAL_INTERVAL);
+  state.cards.forEach((card: CharacterDef, index) => {
+    const box = boxes[index];
+    if (!box) return;
+    if (index < state.revealed) {
+      const isLatest = index === state.revealed - 1 && state.phase === 'reveal';
+      drawCard(ctx, card, box, { alpha: isLatest ? 0.4 + 0.6 * freshness : 1 });
+    } else {
+      drawSlot(ctx, box);
+    }
+  });
+}
+
 export function renderScene(
   ctx: CanvasRenderingContext2D,
   logical: LogicalSize,
-  state: DisplayState,
+  state: RevealState,
   timeMs: number,
 ): void {
   drawBackdrop(ctx, logical.width, logical.height, timeMs);
-  if (state.cards.length === 0) {
+
+  if (state.phase === 'idle') {
     drawTapHint(ctx, logical, timeMs);
-  } else if (state.cards.length === 1) {
+    return;
+  }
+  if (state.phase === 'flight') {
+    drawStarTrail(ctx, logical, state.flightElapsed / FLIGHT_DURATION, state.cards.some((c) => c.rarity === 5));
+    return;
+  }
+  if (state.phase === 'result') {
     const card = state.cards[0];
     if (card) drawCard(ctx, card, singleCardBox(logical));
-  } else {
-    const boxes = summaryBoxes(logical, state.cards.length);
-    state.cards.forEach((card, index) => {
-      const box = boxes[index];
-      if (box) drawCard(ctx, card, box);
-    });
+    return;
   }
+  drawRevealGrid(ctx, logical, state);
 }

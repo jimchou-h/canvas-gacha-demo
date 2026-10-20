@@ -89,6 +89,18 @@ function drawPip(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   ctx.fill();
 }
 
+export function drawSlot(ctx: CanvasRenderingContext2D, box: Box): void {
+  ctx.save();
+  roundedPath(ctx, box, box.width * 0.06);
+  ctx.fillStyle = 'rgba(12, 16, 38, 0.55)';
+  ctx.fill();
+  ctx.setLineDash([box.width * 0.09, box.width * 0.06]);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(154, 166, 214, 0.5)';
+  ctx.stroke();
+  ctx.restore();
+}
+
 export function drawCard(
   ctx: CanvasRenderingContext2D,
   card: CharacterDef,
