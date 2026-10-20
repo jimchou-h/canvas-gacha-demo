@@ -34,6 +34,35 @@ export function singleCardBox(logical: LogicalSize): Box {
   };
 }
 
+export function summaryBoxes(logical: LogicalSize, count: number): readonly Box[] {
+  const columns = Math.min(5, count);
+  const rows = Math.ceil(count / columns);
+  const edge = Math.min(logical.width, logical.height);
+  const margin = edge * 0.03;
+  const gap = edge * 0.02;
+  const cellWidth = (logical.width - margin * 2 - gap * (columns - 1)) / columns;
+  const cellHeight = (logical.height - margin * 2 - gap * (rows - 1)) / rows;
+  const width = Math.min(cellWidth, cellHeight / 1.4);
+  const height = width * 1.4;
+  const totalWidth = columns * width + gap * (columns - 1);
+  const totalHeight = rows * height + gap * (rows - 1);
+  const startX = (logical.width - totalWidth) / 2;
+  const startY = (logical.height - totalHeight) / 2;
+
+  const boxes: Box[] = [];
+  for (let i = 0; i < count; i++) {
+    const column = i % columns;
+    const row = Math.floor(i / columns);
+    boxes.push({
+      x: startX + column * (width + gap),
+      y: startY + row * (height + gap),
+      width,
+      height,
+    });
+  }
+  return boxes;
+}
+
 function roundedPath(ctx: CanvasRenderingContext2D, box: Box, radius: number): void {
   const r = Math.min(radius, box.width / 2, box.height / 2);
   ctx.beginPath();
@@ -120,11 +149,12 @@ export function drawCard(
   ctx.fillRect(artBox.x, artBox.y + artBox.height, box.width, plateHeight);
   ctx.restore();
 
-  const pipRadius = Math.max(5, box.width * 0.032);
+  const compact = box.width < 96;
+  const pipRadius = Math.max(3.5, box.width * (compact ? 0.05 : 0.032));
   const pipGap = pipRadius * 2.6;
   const pipRowWidth = (card.rarity - 1) * pipGap;
   const pipCenterX = box.x + box.width / 2;
-  const pipY = artBox.y + artBox.height + plateHeight * 0.28;
+  const pipY = artBox.y + artBox.height + plateHeight * (compact ? 0.3 : 0.28);
   ctx.save();
   ctx.shadowColor = theme.glow;
   ctx.shadowBlur = card.rarity === 5 ? 12 : 6;
@@ -133,17 +163,20 @@ export function drawCard(
   }
   ctx.restore();
 
-  const nameSize = Math.max(12, box.width * 0.072);
+  const nameSize = compact ? Math.max(9, box.width * 0.13) : Math.max(12, box.width * 0.072);
+  const displayName = compact ? card.name.split('·').pop() ?? card.name : card.name;
   ctx.fillStyle = '#eef1ff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = `600 ${nameSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
-  ctx.fillText(card.name, pipCenterX, pipY + plateHeight * 0.42, box.width * 0.9);
+  ctx.fillText(displayName, pipCenterX, pipY + plateHeight * 0.45, box.width * 0.92);
 
-  const labelSize = Math.max(10, box.width * 0.052);
-  ctx.font = `${labelSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
-  ctx.fillStyle = theme.frame;
-  ctx.fillText(theme.label, pipCenterX, pipY + plateHeight * 0.42 + nameSize * 1.35, box.width * 0.9);
+  if (!compact) {
+    const labelSize = Math.max(10, box.width * 0.052);
+    ctx.font = `${labelSize}px 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif`;
+    ctx.fillStyle = theme.frame;
+    ctx.fillText(theme.label, pipCenterX, pipY + plateHeight * 0.42 + nameSize * 1.35, box.width * 0.9);
+  }
 
   roundedPath(ctx, box, radius);
   ctx.lineWidth = card.rarity === 5 ? 3 : card.rarity === 4 ? 2.2 : 1.6;

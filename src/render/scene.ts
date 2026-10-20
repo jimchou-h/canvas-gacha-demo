@@ -1,10 +1,10 @@
 import type { CharacterDef } from '../core/characters';
 import type { LogicalSize, Point } from '../core/layout';
-import { type Box, drawCard, singleCardBox } from './card';
+import { type Box, drawCard, singleCardBox, summaryBoxes } from './card';
 import { drawBackdrop } from './starfield';
 
 export interface DisplayState {
-  readonly card: CharacterDef | null;
+  readonly cards: readonly CharacterDef[];
 }
 
 export function tapHintBox(logical: LogicalSize): Box {
@@ -50,9 +50,16 @@ export function renderScene(
   timeMs: number,
 ): void {
   drawBackdrop(ctx, logical.width, logical.height, timeMs);
-  if (state.card) {
-    drawCard(ctx, state.card, singleCardBox(logical));
-  } else {
+  if (state.cards.length === 0) {
     drawTapHint(ctx, logical, timeMs);
+  } else if (state.cards.length === 1) {
+    const card = state.cards[0];
+    if (card) drawCard(ctx, card, singleCardBox(logical));
+  } else {
+    const boxes = summaryBoxes(logical, state.cards.length);
+    state.cards.forEach((card, index) => {
+      const box = boxes[index];
+      if (box) drawCard(ctx, card, box);
+    });
   }
 }

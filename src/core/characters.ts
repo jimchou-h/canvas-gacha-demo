@@ -41,3 +41,12 @@ export function pickCharacter(rarity: Rarity, rand: RandomSource): CharacterDef 
 export function drawSingle(rand: RandomSource): CharacterDef {
   return pickCharacter(rollRarity(rand), rand);
 }
+
+export function drawTen(rand: RandomSource): readonly CharacterDef[] {
+  const cards: CharacterDef[] = [];
+  for (let i = 0; i < 10; i++) cards.push(drawSingle(rand));
+  if (!cards.some((card) => card.rarity >= 4)) {
+    cards[cards.length - 1] = pickCharacter(4, rand);
+  }
+  return cards;
+}

@@ -1,4 +1,4 @@
-import { type CharacterDef, CHARACTER_POOL, drawSingle } from './core/characters';
+import { type CharacterDef, CHARACTER_POOL, drawSingle, drawTen } from './core/characters';
 import { computeCanvasSize, type LogicalSize, toLogicalPoint } from './core/layout';
 import { preloadCharacters } from './render/assets';
 import { isInside, renderScene, tapHintBox, type DisplayState } from './render/scene';
@@ -6,13 +6,14 @@ import { isInside, renderScene, tapHintBox, type DisplayState } from './render/s
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const context2d = canvas.getContext('2d');
 const singleButton = document.getElementById('btn-single') as HTMLButtonElement;
+const tenButton = document.getElementById('btn-ten') as HTMLButtonElement;
 const liveRegion = document.getElementById('result-live') as HTMLElement;
 
 if (!context2d) throw new Error('浏览器不支持 Canvas 2D');
 const ctx: CanvasRenderingContext2D = context2d;
 
 let logical: LogicalSize = { width: canvas.clientWidth, height: canvas.clientHeight };
-let state: DisplayState = { card: null };
+let state: DisplayState = { cards: [] };
 
 function resize(): void {
   const rect = canvas.getBoundingClientRect();
@@ -27,14 +28,9 @@ function resize(): void {
   logical = { width: size.cssWidth, height: size.cssHeight };
 }
 
-function announce(card: CharacterDef): void {
-  liveRegion.textContent = `抽到 ${card.rarity} 星 ${card.name}`;
-}
-
-function draw(): void {
-  const card = drawSingle(Math.random);
-  state = { card };
-  announce(card);
+function show(cards: readonly CharacterDef[]): void {
+  state = { cards };
+  liveRegion.textContent = cards.map((card) => `${card.rarity}星 ${card.name}`).join('；');
 }
 
 function frame(timeMs: number): void {
@@ -45,10 +41,11 @@ function frame(timeMs: number): void {
 canvas.addEventListener('pointerdown', (event) => {
   const rect = canvas.getBoundingClientRect();
   const point = toLogicalPoint(event.clientX, event.clientY, rect, logical);
-  if (state.card || isInside(point, tapHintBox(logical))) draw();
+  if (state.cards.length > 0 || isInside(point, tapHintBox(logical))) show([drawSingle(Math.random)]);
 });
 
-singleButton.addEventListener('click', draw);
+singleButton.addEventListener('click', () => show([drawSingle(Math.random)]));
+tenButton.addEventListener('click', () => show(drawTen(Math.random)));
 
 window.addEventListener('resize', resize);
 
