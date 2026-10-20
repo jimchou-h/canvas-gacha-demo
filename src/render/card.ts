@@ -23,9 +23,14 @@ const THEME: Record<Rarity, Theme> = {
   5: { frame: '#f4cd6f', glow: 'rgba(244, 205, 111, 0.85)', aura: 30, label: '五星 · 天命' },
 };
 
+/** 素材插画的宽高比（640×960）。卡面沿用同一比例，绘制时才不会裁掉画面。 */
+export const ART_RATIO = 2 / 3;
+export const CARD_ASPECT = 1 / ART_RATIO;
+const PLATE_SHARE = 0.26;
+
 export function singleCardBox(logical: LogicalSize): Box {
-  const width = Math.min(300, logical.width * 0.62, (logical.height * 0.6) / 1.4);
-  const height = width * 1.4;
+  const width = Math.min(300, logical.width * 0.62, (logical.height * 0.6) / CARD_ASPECT);
+  const height = width * CARD_ASPECT;
   return {
     x: (logical.width - width) / 2,
     y: (logical.height - height) / 2 - logical.height * 0.015,
@@ -42,8 +47,8 @@ export function summaryBoxes(logical: LogicalSize, count: number): readonly Box[
   const gap = edge * 0.02;
   const cellWidth = (logical.width - margin * 2 - gap * (columns - 1)) / columns;
   const cellHeight = (logical.height - margin * 2 - gap * (rows - 1)) / rows;
-  const width = Math.min(cellWidth, cellHeight / 1.4);
-  const height = width * 1.4;
+  const width = Math.min(cellWidth, cellHeight / CARD_ASPECT);
+  const height = width * CARD_ASPECT;
   const totalWidth = columns * width + gap * (columns - 1);
   const totalHeight = rows * height + gap * (rows - 1);
   const startX = (logical.width - totalWidth) / 2;
@@ -115,7 +120,7 @@ export interface PlateLayout {
 }
 
 export function plateLayout(box: Box): PlateLayout {
-  const plateHeight = box.height * 0.22;
+  const plateHeight = box.height * PLATE_SHARE;
   const plateTop = box.y + box.height - plateHeight;
   const compact = box.width < 96;
   const gap = plateHeight * 0.06;
@@ -160,7 +165,6 @@ export function drawCard(
   const theme = THEME[card.rarity];
   const alpha = options.alpha ?? 1;
   const layout = plateLayout(box);
-  const artBox: Box = { ...box, height: box.height - layout.plateHeight };
   const radius = box.width * 0.06;
 
   ctx.save();
@@ -175,12 +179,12 @@ export function drawCard(
   ctx.restore();
 
   ctx.save();
-  roundedPath(ctx, artBox, radius);
+  roundedPath(ctx, box, radius);
   ctx.clip();
   const art = peekImage(card.art);
   if (art) {
     const artRatio = art.naturalWidth / art.naturalHeight;
-    const boxRatio = artBox.width / artBox.height;
+    const boxRatio = box.width / box.height;
     const srcWidth = artRatio > boxRatio ? art.naturalHeight * boxRatio : art.naturalWidth;
     const srcHeight = artRatio > boxRatio ? art.naturalHeight : art.naturalWidth / boxRatio;
     ctx.drawImage(
@@ -189,26 +193,22 @@ export function drawCard(
       (art.naturalHeight - srcHeight) / 2,
       srcWidth,
       srcHeight,
-      artBox.x,
-      artBox.y,
-      artBox.width,
-      artBox.height,
+      box.x,
+      box.y,
+      box.width,
+      box.height,
     );
-    const veil = ctx.createLinearGradient(0, artBox.y, 0, artBox.y + artBox.height);
-    veil.addColorStop(0, 'rgba(6, 8, 24, 0.35)');
-    veil.addColorStop(0.35, 'rgba(6, 8, 24, 0)');
-    veil.addColorStop(1, 'rgba(6, 8, 24, 0.55)');
-    ctx.fillStyle = veil;
-    ctx.fillRect(artBox.x, artBox.y, artBox.width, artBox.height);
   } else {
     ctx.fillStyle = '#141a3a';
-    ctx.fillRect(artBox.x, artBox.y, artBox.width, artBox.height);
+    ctx.fillRect(box.x, box.y, box.width, box.height);
   }
-  ctx.restore();
 
-  ctx.save();
-  ctx.fillStyle = 'rgba(8, 11, 30, 0.92)';
-  ctx.fillRect(artBox.x, layout.plateTop, box.width, layout.plateHeight);
+  const shade = ctx.createLinearGradient(0, layout.plateTop - box.height * 0.16, 0, box.y + box.height);
+  shade.addColorStop(0, 'rgba(7, 9, 26, 0)');
+  shade.addColorStop(0.5, 'rgba(7, 9, 26, 0.78)');
+  shade.addColorStop(1, 'rgba(5, 7, 20, 0.95)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(box.x, layout.plateTop - box.height * 0.16, box.width, box.height * 0.16 + layout.plateHeight);
   ctx.restore();
 
   const pipRowWidth = (card.rarity - 1) * layout.pipGap;

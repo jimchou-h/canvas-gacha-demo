@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { summaryBoxes } from '../src/render/card';
+import { CARD_ASPECT, summaryBoxes } from '../src/render/card';
 
 function overlaps(a: { x: number; y: number; width: number; height: number }, b: typeof a): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
@@ -35,9 +35,9 @@ describe('summaryBoxes 十连总览网格', () => {
     for (const box of boxes) expect(box.width).toBeGreaterThanOrEqual(60);
   });
 
-  it('保持卡面 1:1.4 竖版比例', () => {
+  it('保持卡面竖版比例', () => {
     const [first] = summaryBoxes({ width: 800, height: 600 }, 10);
     expect(first).toBeDefined();
-    expect(first!.height / first!.width).toBeCloseTo(1.4, 1);
+    expect(first!.height / first!.width).toBeCloseTo(CARD_ASPECT, 5);
   });
 });
