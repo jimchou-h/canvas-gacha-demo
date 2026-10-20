@@ -2,6 +2,7 @@ import { type CharacterDef, CHARACTER_POOL, drawSingle, drawTen } from './core/c
 import { computeCanvasSize, type LogicalSize, toLogicalPoint } from './core/layout';
 import { advance, initialRevealState, requestDraw, skip } from './core/reveal-flow';
 import { preloadCharacters } from './render/assets';
+import { initStats, sampleFrame } from './render/perf';
 import { isInside, renderScene, tapHintBox } from './render/scene';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -15,6 +16,7 @@ if (!context2d) throw new Error('浏览器不支持 Canvas 2D');
 const ctx: CanvasRenderingContext2D = context2d;
 
 let logical: LogicalSize = { width: canvas.clientWidth, height: canvas.clientHeight };
+let dpr = 1;
 let state = initialRevealState();
 let lastTime = 0;
 
@@ -37,6 +39,7 @@ function resize(): void {
   canvas.height = size.pixelHeight;
   ctx.setTransform(size.dpr, 0, 0, size.dpr, 0, 0);
   logical = { width: size.cssWidth, height: size.cssHeight };
+  dpr = size.dpr;
 }
 
 function startDraw(draw: () => readonly CharacterDef[]): void {
@@ -47,13 +50,17 @@ function startDraw(draw: () => readonly CharacterDef[]): void {
 }
 
 function frame(timeMs: number): void {
-  const delta = lastTime === 0 ? 0 : Math.min(timeMs - lastTime, 120);
+  const interval = lastTime === 0 ? 16.7 : timeMs - lastTime;
+  const delta = lastTime === 0 ? 0 : Math.min(interval, 120);
   lastTime = timeMs;
+  const started = performance.now();
   const before = state.phase;
   state = advance(state, delta);
   if (before !== state.phase && !isBusy()) announce(state.cards);
   skipButton.hidden = !isBusy();
-  renderScene(ctx, logical, state, timeMs);
+  const timings = renderScene(ctx, logical, state, timeMs, dpr);
+  const render = performance.now() - started;
+  sampleFrame({ interval, render, ...timings });
   requestAnimationFrame(frame);
 }
 
@@ -75,6 +82,7 @@ skipButton.addEventListener('click', () => {
 window.addEventListener('resize', resize);
 
 resize();
+initStats();
 void preloadCharacters([...CHARACTER_POOL[3], ...CHARACTER_POOL[4], ...CHARACTER_POOL[5]]).then(() => {
   requestAnimationFrame(frame);
 });

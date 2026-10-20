@@ -5,6 +5,12 @@ import { type Box, drawCard, drawSlot, singleCardBox, summaryBoxes } from './car
 import { drawStarTrail } from './starTrail';
 import { drawBackdrop } from './starfield';
 
+export interface FrameTimings {
+  backdrop: number;
+  trail: number;
+  cards: number;
+}
+
 export function tapHintBox(logical: LogicalSize): Box {
   const width = Math.min(240, logical.width * 0.7);
   const height = Math.max(38, width * 0.14);
@@ -71,21 +77,31 @@ export function renderScene(
   logical: LogicalSize,
   state: RevealState,
   timeMs: number,
-): void {
-  drawBackdrop(ctx, logical.width, logical.height, timeMs);
+  dpr: number,
+): FrameTimings {
+  const timings: FrameTimings = { backdrop: 0, trail: 0, cards: 0 };
+
+  let mark = performance.now();
+  drawBackdrop(ctx, logical.width, logical.height, dpr, timeMs);
+  timings.backdrop = performance.now() - mark;
 
   if (state.phase === 'idle') {
     drawTapHint(ctx, logical, timeMs);
-    return;
+    return timings;
   }
   if (state.phase === 'flight') {
+    mark = performance.now();
     drawStarTrail(ctx, logical, state.flightElapsed / FLIGHT_DURATION, state.cards.some((c) => c.rarity === 5));
-    return;
+    timings.trail = performance.now() - mark;
+    return timings;
   }
+  mark = performance.now();
   if (state.phase === 'result') {
     const card = state.cards[0];
     if (card) drawCard(ctx, card, singleCardBox(logical));
-    return;
+  } else {
+    drawRevealGrid(ctx, logical, state);
   }
-  drawRevealGrid(ctx, logical, state);
+  timings.cards = performance.now() - mark;
+  return timings;
 }

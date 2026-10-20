@@ -28,13 +28,20 @@ export function makeStars(count: number, seed = 20261020): readonly Star[] {
 }
 
 const STARS = makeStars(140);
+const TWINKLE = STARS.slice(0, 40);
+const ALPHA_BUCKETS = 4;
 
-export function drawBackdrop(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  timeMs: number,
-): void {
+let layer: HTMLCanvasElement | null = null;
+let layerKey = '';
+
+function buildLayer(width: number, height: number, dpr: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * dpr));
+  canvas.height = Math.max(1, Math.round(height * dpr));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   const sky = ctx.createLinearGradient(0, 0, width * 0.35, height);
   sky.addColorStop(0, '#0a1030');
   sky.addColorStop(0.55, '#070a22');
@@ -45,16 +52,14 @@ export function drawBackdrop(
   drawNebula(ctx, width * 0.18, height * 0.22, Math.min(width, height) * 0.55, 'rgba(124, 78, 214, 0.30)');
   drawNebula(ctx, width * 0.84, height * 0.68, Math.min(width, height) * 0.42, 'rgba(38, 96, 190, 0.26)');
 
-  const seconds = timeMs / 1000;
+  ctx.fillStyle = '#dfe6ff';
   for (const star of STARS) {
-    const twinkle = 0.65 + 0.35 * Math.sin(seconds * 1.4 + star.phase);
-    ctx.globalAlpha = star.alpha * twinkle;
-    ctx.fillStyle = '#dfe6ff';
+    ctx.globalAlpha = star.alpha * 0.7;
     ctx.beginPath();
     ctx.arc(star.nx * width, star.ny * height, star.radius, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.globalAlpha = 1;
+  return canvas;
 }
 
 function drawNebula(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string): void {
@@ -63,4 +68,34 @@ function drawNebula(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: nu
   glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+}
+
+export function drawBackdrop(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  dpr: number,
+  timeMs: number,
+): void {
+  const key = `${Math.round(width)}x${Math.round(height)}x${dpr}`;
+  if (!layer || layerKey !== key) {
+    layer = buildLayer(width, height, dpr);
+    layerKey = key;
+  }
+  ctx.drawImage(layer, 0, 0, width, height);
+
+  const seconds = timeMs / 1000;
+  ctx.fillStyle = '#eef2ff';
+  for (let bucket = 0; bucket < ALPHA_BUCKETS; bucket++) {
+    ctx.globalAlpha = (bucket + 0.5) / ALPHA_BUCKETS;
+    ctx.beginPath();
+    for (const star of TWINKLE) {
+      const alpha = star.alpha * (0.65 + 0.35 * Math.sin(seconds * 1.4 + star.phase));
+      if (Math.min(ALPHA_BUCKETS - 1, Math.floor(alpha * ALPHA_BUCKETS)) !== bucket) continue;
+      ctx.moveTo(star.nx * width + star.radius, star.ny * height);
+      ctx.arc(star.nx * width, star.ny * height, star.radius, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 }
