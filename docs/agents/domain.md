@@ -8,4 +8,4 @@
 - 若 `docs/adr/` 下有与当前工作相关的决策，先读取并检查是否冲突。
 - 若文件暂不存在，直接继续，不把缺失视为错误。
 
-当前抽卡需求的单一规格来源是 `openspec/changes/add-canvas-gacha/`；将来的票据与实现须以该 change 中的场景和任务为准。
+当前抽卡能力的行为规格位于 `openspec/specs/`；已完成变更及任务记录位于 `openspec/changes/archive/2026-10-21-add-canvas-gacha/`。后续新需求应建立新的 OpenSpec change。
