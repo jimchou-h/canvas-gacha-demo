@@ -25,10 +25,27 @@ describe('mock 角色池', () => {
     }
   });
 
-  it('池规模满足 5★×2、4★×3、3★×4', () => {
-    expect(listCharacters(5)).toHaveLength(2);
-    expect(listCharacters(4)).toHaveLength(3);
-    expect(listCharacters(3)).toHaveLength(4);
+  it('池规模满足 5★×3、4★×5、3★×7', () => {
+    expect(listCharacters(5)).toHaveLength(3);
+    expect(listCharacters(4)).toHaveLength(5);
+    expect(listCharacters(3)).toHaveLength(7);
+  });
+
+  it('角色 id 全局唯一', () => {
+    const ids = ([3, 4, 5] as const).flatMap((rarity) => CHARACTER_POOL[rarity].map((c) => c.id));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('池中每张卡面都有对应素材文件，不会渲染空白卡面', () => {
+    // 用 Vite 的 glob 而不是 node:fs，避免为验证引入 Node 类型。
+    const files = new Set(Object.keys(import.meta.glob('../public/assets/characters/*.jpg')));
+    for (const rarity of [3, 4, 5] as const) {
+      for (const character of CHARACTER_POOL[rarity]) {
+        expect(files.has(`../public${character.art}`), `${character.id} 缺少插画`).toBe(true);
+      }
+    }
+    const referenced = ([3, 4, 5] as const).reduce((sum, rarity) => sum + CHARACTER_POOL[rarity].length, 0);
+    expect(files.size, 'public 下不应残留未被引用的卡面素材').toBe(referenced);
   });
 });
 
