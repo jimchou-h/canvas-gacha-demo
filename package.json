@@ -1,7 +1,14 @@
 {
-  "name": "chouka-canvas",
+  "name": "canvas-gacha-demo",
   "private": true,
   "version": "0.0.0",
+  "description": "纯浏览器本地的星穹幻想抽卡演示：HTML Canvas 2D 绘制卡面与星轨，含单抽、十连保底与逐张揭晓",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jimchou-h/canvas-gacha-demo.git"
+  },
+  "homepage": "https://jimchou-h.github.io/canvas-gacha-demo/",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -3,4 +3,5 @@ dist/
 .vite/
 *.log
 assets-src/
+vibe_images/
 .devserver.log
