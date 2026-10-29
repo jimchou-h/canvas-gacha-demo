@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHARACTER_POOL, drawSingle, listCharacters } from '../src/core/characters';
+import { CHARACTER_POOL, drawSingle, listCharacters, pickCharacter } from '../src/core/characters';
 import type { RandomSource } from '../src/core/rarity';
 
 const cycle = (values: readonly number[]): RandomSource => {
@@ -46,6 +46,19 @@ describe('mock 角色池', () => {
     }
     const referenced = ([3, 4, 5] as const).reduce((sum, rarity) => sum + CHARACTER_POOL[rarity].length, 0);
     expect(files.size, 'public 下不应残留未被引用的卡面素材').toBe(referenced);
+  });
+
+  it('同一稀有度在池内分布，不会固定落在同一张卡牌', () => {
+    let seed = 1;
+    const rand: RandomSource = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    for (const rarity of [3, 4, 5] as const) {
+      const ids = new Set<string>();
+      for (let i = 0; i < 40; i++) ids.add(pickCharacter(rarity, rand).id);
+      expect(ids.size, `${rarity}★ 池分布`).toBeGreaterThan(1);
+    }
   });
 });
 
