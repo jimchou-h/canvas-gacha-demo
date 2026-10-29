@@ -35,3 +35,4 @@ capability: mock-gacha-draw
 - 2026-10-29 人工浏览器验收：用户在 `http://localhost:5178/` 实抽后回复「可以」，新卡面完整、名称与星级可读，无回归。
 - 2026-10-29 验收复核对齐：「不会固定落在同一张卡牌」这条 Scenario 原先只被池规模断言间接支撑，补 `test/characters.test.ts` 的池内分布用例（commit `ab944f0`）后 49 tests 全绿。
 - 2026-10-29 关票：`openspec archive` 把「角色池规模与卡面素材」合入 `openspec/specs/mock-gacha-draw/spec.md`（+1 要求，并补上该 capability 的 Purpose），`CONTEXT.md` 增补「角色池」术语；change 归档为 `2026-10-29-expand-character-pool`。本地 commit，**不推送 → `pending_push`**。
+- 2026-10-29 推送：用户建好公开仓库 `github.com/jimchou-h/canvas-gacha-demo` 并要求推送，`pending_push` 解除。为支持 Pages 项目站点子路径，补 `src/render/assets.ts` 按 `BASE_URL` 拼接卡面 URL（commit `4c10a82`）与 GitHub 门面文件（`e936735`）；四道门重跑全绿（49 tests）。Actions 首跑 build + deploy 均通过，线上 `https://jimchou-h.github.io/canvas-gacha-demo/` 返回 200，`/canvas-gacha-demo/assets/characters/mira.jpg` 200 / 81KB。
