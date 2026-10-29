@@ -1,7 +1,8 @@
 # mock-gacha-draw Specification
 
 ## Purpose
-TBD - created by archiving change add-canvas-gacha. Update Purpose after archive.
+定义浏览器本地的 mock 抽卡结果：稀有度概率、十连保底，以及可供抽取的角色池规模与卡面素材要求。不涉及账号、货币或服务端库存。
+
 ## Requirements
 ### Requirement: 本地随机抽卡
 系统 SHALL 在浏览器本地生成抽卡结果，不调用真实抽卡服务；普通独立抽取的基础稀有度概率 SHALL 为 5★ 1.5%、4★ 12%、3★ 86.5%。
@@ -28,4 +29,19 @@ TBD - created by archiving change add-canvas-gacha. Update Purpose after archive
 #### Scenario: 连续执行十连
 - **WHEN** 用户先后执行多次十连
 - **THEN** 每次十连独立满足至少一张 4★ 或以上的约束，不累计跨十连保底计数
+
+### Requirement: 角色池规模与卡面素材
+系统 SHALL 为每个稀有度提供至少 3 张原创角色卡面；池中每张卡牌 SHALL 有对应的 2:3 竖版插画文件，绘制时不裁切画面。
+
+#### Scenario: 抽出任一稀有度
+- **WHEN** 一次抽取选定 3★、4★ 或 5★
+- **THEN** 系统从该稀有度的角色池中取出一张卡牌，该池至少包含 3 张不同角色
+
+#### Scenario: 卡面素材缺失
+- **WHEN** 角色池声明了某个稀有度但对应插画文件不存在
+- **THEN** 验证阶段 SHALL 失败，而不是在页面上渲染空白卡面
+
+#### Scenario: 连续抽取同一稀有度
+- **WHEN** 用户连续多次抽到同一稀有度
+- **THEN** 结果在该稀有度池内分布，不要求去重，但不会固定落在同一张卡牌上
 

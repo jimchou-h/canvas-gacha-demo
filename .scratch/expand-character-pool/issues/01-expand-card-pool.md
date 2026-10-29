@@ -1,6 +1,6 @@
 # 01 - 角色池扩充到 15 张卡面
 
-Status: ready-for-human
+Status: closed
 Task: tasks.md 1.1
 capability: mock-gacha-draw
 依赖: 无（`add-canvas-gacha` 已归档）
@@ -32,3 +32,6 @@ capability: mock-gacha-draw
 - 2026-10-29 素材：6 张原始插画为 1024×1536（精确 2:3，`fit: 'cover'` 转换时零裁切），经 `scripts/optimize-assets.mjs` 输出 640×960 JPEG，单张 62–92KB，15 张合计 1.3MB；原始 PNG 留在 gitignore 的 `assets-src/characters/`。
 - 2026-10-29 素材完整性：用 Vite 的 `import.meta.glob` 断言「池中每张卡面都有文件」且「public 下不残留未被引用的卡面」，避免为一条测试引入 `@types/node`。
 - 2026-10-29 状态：自动化门全绿，dev server 上 6 张新素材均 200；等待人工浏览器验收 → `ready-for-human`，本地 commit，**不推送 → `pending_push`**。
+- 2026-10-29 人工浏览器验收：用户在 `http://localhost:5178/` 实抽后回复「可以」，新卡面完整、名称与星级可读，无回归。
+- 2026-10-29 验收复核对齐：「不会固定落在同一张卡牌」这条 Scenario 原先只被池规模断言间接支撑，补 `test/characters.test.ts` 的池内分布用例（commit `ab944f0`）后 49 tests 全绿。
+- 2026-10-29 关票：`openspec archive` 把「角色池规模与卡面素材」合入 `openspec/specs/mock-gacha-draw/spec.md`（+1 要求，并补上该 capability 的 Purpose），`CONTEXT.md` 增补「角色池」术语；change 归档为 `2026-10-29-expand-character-pool`。本地 commit，**不推送 → `pending_push`**。
