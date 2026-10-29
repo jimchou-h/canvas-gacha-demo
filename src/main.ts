@@ -90,6 +90,7 @@ window.addEventListener('resize', resize);
 
 resize();
 initStats();
-void preloadCharacters([...CHARACTER_POOL[3], ...CHARACTER_POOL[4], ...CHARACTER_POOL[5]]).then(() => {
-  requestAnimationFrame(frame);
-});
+requestAnimationFrame(frame);
+// 卡面只在揭晓时才用得上，先让首帧把背景和提示画出来，再后台预加载。
+// 等 preload 完成再起帧会把 1.3MB 素材变成首屏阻塞，Lighthouse Speed Index 主要就耗在这里。
+void preloadCharacters([...CHARACTER_POOL[3], ...CHARACTER_POOL[4], ...CHARACTER_POOL[5]]);

@@ -69,6 +69,11 @@ scripts/        optimize-assets.mjs 素材压缩
 - 背景层（渐变天空 + 星云 + 140 颗基础星）按 `尺寸 × dpr` 缓存成一张离屏 canvas，每帧一次 `drawImage`；只有 40 颗闪烁星逐帧重绘，并按 4 档 alpha 合批，把 140 次 `fill` 降到最多 4 次。
 - 星轨头部的光晕从「每帧新建径向渐变」改成按配色缓存的精灵贴图；尾迹分段同样按 alpha 分档合批，射线从 6–10 次 `stroke` 合成一条路径。
 
+首屏另有两条约束，别退回去（数字是同机、同 1.26MB 负载、DevTools 模拟 4G + 4× CPU 的 Lighthouse 对比）：
+
+- 起帧不等待素材预加载：`src/main.ts` 先排第一帧，再后台拉 15 张卡面。改成 `await preloadCharacters(...)` 再起帧，会把画面排到网络尾部——Speed Index 1.4s → 7.1s、TTI 1.4s → 8.9s。
+- 样式内联在 `index.html` 的 `<style>` 里：外链样式表是渲染阻塞资源，多一次 RTT，FCP/LCP 0.7s → 1.3s（Lighthouse 自己标了 741ms）。代价是 dev 下改样式会整页刷新。
+
 想知道自己机器上到底多少帧，加查询参数打开只读面板：
 
 ```
